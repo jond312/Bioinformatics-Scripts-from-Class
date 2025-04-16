@@ -8,6 +8,6 @@ Algorithms and Data Structures for Bioinforrmatics Assignment 1 Grade: A\
 Algorithms and Data Structures for Bioinforrmatics Assignment 2 Grade: A-\
 Algorithms and Data Structures for Bioinforrmatics Assignment 3 Grade: Currrently Not Available\
 
-** All .sh files are job scripts written for NGS Analysis for Bioinformatics**
+**All .sh files are job scripts written for NGS Analysis for Bioinformatics**
 
 
