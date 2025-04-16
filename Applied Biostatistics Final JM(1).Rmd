@@ -1,0 +1,249 @@
+Final Project Jon Martins
+==========
+Project 1
+==========
+*** All data not found in ppg2008.csv is retrieved from each player's profile on www.basketball-reference.com ***
+
+For this project, I will be creating a simplified version of the Player Efficiency Rating (PER) for each player in this 2008 dataset. I am a massive basketball and huge Knicks fan, so I love analyzing this data. I decided on creating a simplified version of the PER rating because it's somewhat the most effective way to evaluate a player, however there are many factors that go into how successful a player can be and for how long, such as injuries, playstyle, coaching and the system (type of basketball played by the coach), and many, many more factors. However, with a PER rating, the overall efficiency of a player can be calculated and used for analyzation of their performance. I decided for a simplified version of the PER statistic given the stats that were included in the ppg2008.csv, as the actual PER formula calls for stats such as team pace, which isn't included in the dataset.
+
+```{r}
+# The dataset is defined as "ppg2008", and is read by using read.csv().
+ppg2008 <- read.csv("ppg2008.csv")
+# The actual PER formula is based on per minute, however I made mine based on average minutes played per player. I did this by using mean() and taking the mean of the minutes column, shown by ppg2008$MIN.
+average_minutes <- mean(ppg2008$MIN)
+# The formula for calculating the PER is shown, based on John Hollinger's original PER formula, developed in 2004 and explained in a paper entitled "Basketball on Paper: Rules and Tools for Performance Analysis". 
+ppg2008$Simplified_PER <- with(ppg2008, (PTS + 0.5 * TRB + 0.75 * AST + 1.5 * (STL + BLK) - 0.25 * TO) / (MIN / average_minutes))
+# The data is sorted by Simplified PER, done by using order().
+ppg2008_sorted <- ppg2008[order(-ppg2008$Simplified_PER), ]
+# The top of the dataset is shown using head(), to confirm that everything was run properly.
+head(ppg2008_sorted)
+# I created a new .csv file containing each player's last (or most recent in a couple of cases, the players being Chris Paul, LeBron James, and Kevin Durant, who are still currently in the NBA) season. read.csv() is used to read the file and define it as ppg_mostrecent.
+ppg_mostrecent <- read.csv("ppg_mostrecent.csv")
+# The average minutes is also taken again.
+average_minutes_recent <- mean(ppg_mostrecent$MIN)
+# The same formula to calculate the Simplified PER is used here.
+ppg_mostrecent$Recent_PER <- with(ppg_mostrecent, (PTS + 0.5 * TRB + 0.75 * AST + 1.5 * (STL + BLK) - 0.25 * TO) / (MIN / average_minutes_recent))
+# The players are once again sorted by PER.
+recent_sorted <- ppg_mostrecent[order(-ppg_mostrecent$Recent_PER), ]
+# The top of the dataset is shown.
+head(recent_sorted)
+# The two datasets created are merged together for each player, done by using merge() and by = "Name".
+merged_ppg <- merge(ppg2008, ppg_mostrecent, by = "Name")
+# The top of the dataset is once again shown.
+head(merged_ppg)
+# The ggplot2 package is loaded into the environment by using library().
+library(ggplot2)
+# The package ""ggrepel" is installed and loaded into the environment in order to add labels to each point on the plot that will eventually be made.
+install.packages("ggrepel")
+library(ggrepel)
+# ggplot is used in order to plot the Simplified_PER of players in 2008 vs their most recent PER.
+ggplot(merged_ppg, aes(x = Simplified_PER, y = Recent_PER)) +
+  # The color for each point is set to blue.
+  geom_point(color = "blue", alpha = 0.6) +
+  # The names of the players are added to each data point.
+  geom_text_repel(aes(label = Name), size = 3, max.overlaps = 20) +
+  # geom_smooth is used to add a smooth line to the dataset for better visualization of the trend. The color is set to red.
+  geom_smooth(method = "lm", color = "red") +
+  theme_minimal() +
+  # Labels are applied to the graph by using labs().
+  labs(title = "2008 PER vs Most Recent PER",
+       x = "2008 PER", y = "Most Recent Season PER")
+```
+The plot showing 2008 PER vs. Most Recent PER shows the trend on how a player most likely regresses throughout their career. For example, a player like Paul Pierce in 2008 had a PER of around 27, but in his final season had a PER of less than 5. Based on the graph, players like Paul where they didn't necessarily have the highest PER in 2008 (which was Paul Pierce's prime; he won a championship with the Boston Celtics in the 2007-2008 season) seem to be less efficient over time as players who had a higher PER in 2008. Of course, there are outliers, as a player like LaMarcus Aldridge had a PER a little over 25 in 2008 and didn't experience too much of a drop off during his final season, where he sat around 15. This is mainly due to LaMarcus being diagnosed with a heart issue at the end of his career, which effectively ended his career prematurely. This is shown clearly by Chris Bosh. Bosh's career was effectively ended abruptly due to being diagnosed with blood clots. This could explain how he is one of the very few players who had a high PER at the end of his career, which was very similar to his 2008 PER (around 32). Then, you have LeBron James, who is widely considered the second best player in the history of basketball. This is very clear as he has an astronomically high PER towards the end of his career just like he did in 2008, which is really right before he hit his prime. However, I do not believe I could have predicted the successes and failures of all of the players, as there are just way too many factors that contribute to the success and failure of an NBA player. For example, Monta Ellis followed a quite average trend of decline, but in the beginning of his career, he was considered a rising star. However, he was playing for the Golden State Warriors, who would go on to draft Stephen Curry in 2009, and they both played the same position. Golden State would eventually choose Curry over Ellis, and so Ellis would leave the team, but never see the production that he had in Golden State. Another player is O.J. Mayo, who in high school and college was easily one of the best players in the country, but unfortunately his game simply just didn't fit the NBA style of play, and sow his PER was very low in the beginning and end of his career. Due to all of these factors, it is simply not possible to guarantee success and failure for certain players. I'd say you could make an educated guess, but that's all it is; a guess. 
+
+==========
+Project 2
+==========
+#1)
+```{r}
+train_data <- read.csv("train.csv") #The data is first read by using read.csv() and putting the name of the file in quotes. It is then assigned to the train_data dataframe.
+labels <- train_data$label #The labels for the dataframe are assigned to "labels" by typing the dataframe and then using a $ symbol to denote what row/column to read.
+pixels <- train_data[, -1] #The first column is removed since its non numerical by putting [, -1]. 
+imageplot <- function(pixel_data) { #A function is created to create the image from the pixels in the train_data dataframe. The function will be called pixel_data. 
+matrix_data <- matrix(as.numeric(pixel_data), nrow = 28, ncol = 28) # A 28x28 matrix is created to plot the pixels by using the matrix method. As.nuemric is used to convert objects to numeric data type. nrow and ncol are both set equal to 28 to create the 28x28 plot.
+image(1:28, 1:28, t(apply(matrix_data, 2, rev)), col = grey.colors(256), axes = FALSE) # The matrix is then transposed by using the t() function. The colors used here are grey colors.
+}
+par(mfrow = c(1, 5)) # The parameters are set using par(), with mfrow being used in order to create the matrix in one plot. 
+for (i in 1:5) { # Digits 1 through 5 are plotted in the for loop, which is then followed by plotting the digits on imageplot.
+imageplot(pixels[1, ])
+}
+col_var <- apply(pixels, 2, sd) # The standard deviation of each column is checked in order to remove columns with zero variance.
+pix_nonzero <- pixels[, col_var > 0] # Columns with zero variance is removed.
+pixels_scaled <- scale(pix_nonzero) # The pixel data is normalized for PCA.
+pca_res <- prcomp(pixels_scaled, center = TRUE, scale. = TRUE) # PCA is applied on the scaled pixel data
+var_exp <- pca_res$sdev^2 / sum(pca_res$sdev^2) # The variance explained is calculated, which will show how much of the data is explained by a certain amount of components.
+plot(cumsum(var_exp), xlab = "Number of Components", ylab = "Cumulative Variance Explained", type = "b", main = "Cumulative Explained Variance")
+```
+I would say that around 250 components would be needed to be kept in order to reproduce the digits reasonably well. This is because it is around 250 components where around 95% of the variance is explained. 
+#2)
+```{r}
+# The PCA results from x is defined as X_pca
+X_pca <- pca_res$x
+# The distance matrix of the PCA is calculated and the hierarchial clustering is applied.
+hc <- hclust(dist(X_pca))
+# The hierarchial clustering dendrogram is plotted.
+plot(hc, labels = train$, main = "Hierarchial Clustering of PCA Components")
+```
+The tree shows that images that are close together in PCA space are more likely to be merged at lower heights, which means the images are similar. This would make sense as the images contain mainly black pixels, which all images contain around the digit with the white pixels.
+#3)
+```{r}
+# The caret and nnet packages are installed and loaded into the environment.
+install.packages("caret")
+install.packages("nnet")
+library(caret)
+library(nnet)
+# The data is then split into training and testing sets, using the createDataPartition() function from the caret package.
+trainIndex <- createDataPartition(y, p = 0.7, list = FALSE)
+# The predictor and response variables are split and defined as different datasets. X is the predictor variables, and Y is the response variables.
+X_train <- x[trainIndex, ]
+Y_train <- y[trainIndex]
+X_test <- x[-trainIndex, ]
+Y_test <- y[-trainIndex]
+# The data is then scaled using scale().
+X_train_scaled <- scale(X_train)
+X_test_scaled <- scale(X_test, center = attr(X_train_scaled, "scaled:center"), scale = attr(X_train_scaled, "scaled:scale"))
+# Folds are then created to create different portions of the data (in this case k = 10).
+folds <- createFolds(y, k = 10, list= TRUE, returnTrain = TRUE)
+# TRhe data will; be trained in a multinomial logistic regression model to make the predictions. This is done by setting X and Y and setting the method = "multinom". This is done because the response variable has two categories.
+model <- train(x = X_train_scaled, y = as.factor(Y_train), method = "multinom")
+# The predict() function is used to make the predictions.
+prediction <- predict(model, X_test_scaled)
+# A confusion matrix is then used to compare the prediction variables with the actual variables.
+conf_mat <- confusionMatrix(prediction, as.factor(Y_test))
+print(conf_mat)
+# The Sensitivity and Specificity values are then taken and printed.
+sensitivity <- conf_mat$byClass["Sensitivity"]
+specificity <- conf_mat$byClass["Specificity"]
+print(sensitivity)
+print(specificity)
+```
+#4)
+```{r}
+# The dplyr package is loaded into the environment.
+library(dplyr)
+# The average of each pixel is calculated for each label in the train dataset.
+avg_digits <- train %>%
+  group_by(label) %>%
+  summarise(across(starts_with("X"), mean, na.rm = TRUE))
+# The predict function is defined in order to be able to predict which digit the image corresponds to.
+predict_dig <- function(test_data, avg_digits) {
+  dot_prod <- sapply(1:10, function(i) {
+    sum(test_data * avg_digits[i, -1])
+})
+  predicted_label <- which.max(dot_prod) - 1
+  return(predicted_label)
+}
+# A prediction is made on a test sample.
+test_sample <- X_test_scaled[1, ]
+# The predict function is used to predict the digit.
+predicted_dig <- predict_dig(test_sample, avg_digits)
+# The predicted digit is then printed.
+print(predicted_dig)
+```
+
+==========
+Project 3
+==========
+#1)
+```{r}
+# The following packages are installed. "pheatmap" is installed in order to create the heatmap, "dendextend" is downloaded in order to edit the dendrogram. For DESeq2, I used BiocManager::install() in order to install it because my version of R doesn't support the DESeq2 version that is downloaded through install.packages.
+install.packages("pheatmap")
+BiocManager::install("DESeq2")
+install.packages("dendextend")
+# Library() is used to load in the packages into the environment.
+library(pheatmap)
+library(DESeq2)
+library(dendextend)
+# The count data "Mnemiopsis_count_data.csv" is defined as count_data in the environment.
+count_data <- read.csv("Mnemiopsis_count_data.csv", row.names = 1)
+# The column data "Mnemiopsis_col_data.csv" is defined as col_data in the environment.
+col_data <- read.csv("Mnemiopsis_col_data.csv", row.names = 1)
+# Genes are filtered out with low counts, meaning that they are not expressed in most samples, which doesn't provide useful information for clustering.
+filtered_counts <- count_data[rowSums(count_data > 1) > ncol(count_data)/2, ]
+# The distances between samples based on their gene expression is calculated using dist().
+sample_dist <- dist(t(filtered_counts))
+# Hierarchial clustering is applied to the samples using hclust().
+sample_hclust <- hclust(sample_dist)
+# dendrogram() is applied to gene_hclust.
+gene_den <- as.dendrogram(gene_hclust)
+# The sample hierarchial cluster dendrogram is plotted using plot().
+plot(sample_hclust, main = "Sample Dendrogram")
+# The distance matrix is calculated between genes using dist().
+gene_dist <- dist(filtered_counts)
+# Hierarchial clustering is applied to the genes using hclust().
+gene_hclust <- hclust(gene_dist)
+# The gene dendrogram is plotted using plot().
+plot(gene_den, main = "Gene Dendrogram")
+```
+#2)
+```{r}
+# The data is standardized so that higher gene expression genes dont dominate the clustering. This is done by using scale().
+scaled <- scale(filtered_counts)
+# The pheatmap() function creates the heatmap  of gene expression.
+pheatmap(scaled,
+         cluster_rows = gene_hclust,
+         cluster_cols = sample_hclust,
+         main = "Heatmap of Gene Expression")
+```
+#3)
+##a)
+```{r}
+# ggplot2 is loaded into the environment
+library(ggplot2)
+# A DESeq2 object is created using the DESeqDataSetFromMatrix() function. The function will hold the count and column data, along with the samples being grouped by condition.
+desds <- DESeqDataSetFromMatrix(countData = filtered_counts,
+                                colData = col_data,
+                                design = ~ condition)
+# The DESeq2 analysis is run on the desds dataset using DESeq2().
+desds <- DESeq(desds)
+# The results are then stored in res.
+res <- results(desds)
+# The results are then ordered by the adjusted p value, using the padj column.
+res_order <- res[order(res$padj), ]
+# The top of the data is shown in order to make sure that the function worked correclty, done by using head().
+head(res_order)
+# The data is prepared as a data frame in order to be used for a volcano plot, which can be used to visualize the p values better.
+volc_data <- as.data.frame(res_order)
+# A new column names logP is added to the volc_data data frame. The column, which includes the negatgive log-transformed adjusted p-value, which is used for visualizing the p-values on the volcano plot.
+volc_data$logP <- -log10(volc_data$padj)
+# The volcano plot is plotted using ggplot().
+ggplot(volc_data, aes(x = log2FoldChange, y = logP)) +
+  geom_point(aes(color = padj < 0.05)) +
+  theme_minimal() +
+  ggtitle("Volcano plot of Differential Expression")
+# The vst() function is used to normalize the data and stabilize variance in the dataset. This is performing PCA on the transformed data.
+vsd <- vst(desds, blind = FALSE)
+# A PCA plot is generated using the function plotPCA().
+plotPCA(vsd, intgroup = "condition")
+
+# The top 10 most significant genes are extracted.
+top_genes <- head(res_order, n = 10)
+# The top genes are printed and shown.
+print(top_genes)
+```
+The genes that are the most significant changing in this dataset are, in order, ML087114a, ML463533a, ML20265a, ML085213a, ML01248a, ML01433a. All of these genes have large values for log2 fold change, which shows how pronounced the differences are. The also have extremely low p values, meaning that their changes are extremely significant.
+##b)
+```{r}
+# The mean expression is calculated using rowMeans().
+mean_exp <- rowMeans(filtered_counts)
+# The dataset is sorted by mean expressions.
+hk_genes <- sort(mean_exp, decreasing = TRUE)
+# The top 10 genes are shown using head() and writing "10" after the dataset name.
+head(hk_genes, 10)
+```
+The genes that are the most consistently highly expressed are ML20395a, ML26358a, ML46651a, ML020045a, ML00017a, ML04011a, ML01482a, ML18558a, ML034334a, and ML034336a. The mean expression values for these genes are extremely high, meaning that they are most likely housekeeping genes.
+
+##c)
+```{r}
+mnem_data <- read.csv("Mnemiopsis_count_data.csv", row.names = 1) # #The data is first read by using read.csv() and putting the name of the file in quotes. It is then assigned to the mnem_data dataframe.
+gene_avg_exp <- rowMeans(mnem_data) # The average of each row (gene) is calculated by using rowMeans. The results are assigned to the gene_avg_exp dataframe.
+top5_genes <- sort(gene_avg_exp, decreasing = TRUE)[1:10] #The top 5 genes with the highest average expression is found by using the sort() to sort the data. Writing in decreasing = TRUE will sort the data from highest to lowest. [1:5] is used in oder to pick the top 5.
+top5_genes
+```
+
+These results seem to be consistent with the results of the analysis that I did with the midterm project, as the top genes and their values are the same.
+##d)
+It seems that in terms of consistency, the data between the midterm and this project are pretty consistent as the values seem to be the same. However, according to the volcano plot, it can be seen that most genes are indeed statistically significant changes in expression between conditions. This could possibly be a testament to the experimental condition, as it clearly had a large impact on expression, but it could also be the quality of the data not being up to par. 
+##e)
+The most interesting pathway or gene that is responding in this study is the ML20395a gene. This is because it is expression is much higher, almost double in fact, to the next highest expression, which comes from ML26358a. This shows that this specific gene is highly affected by the environmental condition.
+
